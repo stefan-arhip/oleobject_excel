@@ -5,7 +5,8 @@ unit Unit1;
 interface
 
 uses
-  Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, Grids, Comobj;
+  Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, Grids,
+  EditBtn, Comobj;
 
 type
 
@@ -14,10 +15,11 @@ type
   TForm1 = class(TForm)
     Button1: TButton;
     Button2: TButton;
-    Edit1: TEdit;
+    FileNameEdit1: TFileNameEdit;
     StringGrid1: TStringGrid;
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
+    procedure FormCreate(Sender: TObject);
   private
 
   public
@@ -37,14 +39,14 @@ procedure TForm1.Button1Click(Sender: TObject);
 var
   XLApp: olevariant;
   x, y: byte;
-  path: variant;
+  FilePath: variant;
 begin
   XLApp := CreateOleObject('Excel.Application');
   try
     XLApp.Visible := False;
     XLApp.DisplayAlerts := False;
-    path := edit1.Text;
-    XLApp.Workbooks.Open(Path);
+    FilePath := FileNameEdit1.FileName;
+    XLApp.Workbooks.Open(FilePath);
     for x := 1 to StringGrid1.ColCount - 1 do
     begin
       for y := 1 to stringgrid1.RowCount - 1 do
@@ -60,28 +62,41 @@ end;
 
 procedure TForm1.Button2Click(Sender: TObject);
 var
-  XLApp: olevariant;
+  XLApp, Workbook: olevariant;
   x, y: byte;
-  path: variant;
+  FilePath: variant;
 begin
   XLApp := CreateOleObject('Excel.Application');
   try
     XLApp.Visible := False;
     XLApp.DisplayAlerts := False;
-    path := edit1.Text;
-    XLApp.Workbooks.Open(Path);
+    FilePath := FileNameEdit1.FileName;
+    if FileExists(FilePath) then
+      Workbook := XLApp.Workbooks.Open(FilePath)
+    else
+      Workbook := XLApp.Workbooks.Add;
+
     for x := 1 to StringGrid1.ColCount - 1 do
     begin
-      for y := 1 to stringgrid1.RowCount - 1 do
+      for y := 1 to StringGrid1.RowCount - 1 do
       begin
         XLApp.Cells[y, x].Value := StringGrid1.Cells[x, y];
       end;
     end;
   finally
-    XLApp.ActiveWorkBook.Save;
+    if FileExists(FilePath) then
+      Workbook.Save
+    else
+      Workbook.SaveAs(FilePath);
     XLApp.Quit;
     XLAPP := Unassigned;
   end;
+end;
+
+procedure TForm1.FormCreate(Sender: TObject);
+begin
+  FileNameEdit1.FileName := IncludeTrailingPathDelimiter(ExtractFileDir(ParamStr(0))) +
+    'Book1.xlsx';
 end;
 
 end.
